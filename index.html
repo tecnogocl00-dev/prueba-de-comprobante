@@ -314,24 +314,34 @@ CUENTA: ${TRANSFER_DETAILS.accountType} (Banco Estado)
         }
 
         /**
-         * Descarga el comprobante como una imagen PNG.
+         * Descarga el comprobante como una imagen PNG, forzando un tamaño consistente.
          */
         function downloadReceiptAsImage() {
             const receiptElement = document.getElementById('receiptOutput');
             
-            // Ocultar botones de acción temporalmente para que no aparezcan en la imagen
+            // Ocultar botones de acción temporalmente
             const tempButtons = document.getElementById('actionButtons');
             tempButtons.classList.add('hidden'); // Ocultar
 
+            // *** Forzar ancho fijo para consistencia en la captura (WhatsApp preview) ***
+            const originalWidth = receiptElement.style.width;
+            const originalMaxWidth = receiptElement.style.maxWidth;
+            const targetWidth = '500px'; 
+            receiptElement.style.width = targetWidth;
+            receiptElement.style.maxWidth = targetWidth; 
+
             html2canvas(receiptElement, {
-                scale: 3, // Aumentado a 3 para mejor calidad y consistencia en móvil/WhatsApp
-                useCORS: true, // Importante si hay imágenes o fuentes de otros dominios
-                backgroundColor: '#ffffff', // Asegura un fondo blanco, o el color de tu comprobante
+                scale: 3, 
+                useCORS: true, 
+                backgroundColor: '#ffffff', 
+                // Asegurar que html2canvas use el ancho fijo que acabamos de establecer
+                width: receiptElement.offsetWidth,
+                windowWidth: receiptElement.offsetWidth 
             }).then(canvas => {
                 // Crear un enlace temporal para la descarga
                 const link = document.createElement('a');
                 link.download = 'comprobante.png';
-                link.href = canvas.toDataURL('image/png'); // Convertir canvas a imagen PNG
+                link.href = canvas.toDataURL('image/png'); 
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -348,6 +358,9 @@ CUENTA: ${TRANSFER_DETAILS.accountType} (Banco Estado)
                 console.error('Error al generar la imagen del comprobante:', error);
                 // NOTA: Se evita usar alert() en el entorno.
             }).finally(() => {
+                // *** Restaurar el ancho original después de la captura ***
+                receiptElement.style.width = originalWidth;
+                receiptElement.style.maxWidth = originalMaxWidth;
                 tempButtons.classList.remove('hidden'); // Mostrar botones de nuevo
             });
         }
